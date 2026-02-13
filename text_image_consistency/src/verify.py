@@ -1,3 +1,4 @@
+
 """
 Central orchestrator: run full pipeline and return evaluation dict.
 """
@@ -13,7 +14,6 @@ from .tifa import tifa_score
 from .utils import set_seed
 
 logger = logging.getLogger("t2i")
-
 
 def evaluate(image_path: str, prompt: str) -> Dict[str, Any]:
     """
