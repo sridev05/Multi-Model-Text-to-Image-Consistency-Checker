@@ -1,3 +1,4 @@
+
 """
 Entry point: hardcoded test case, formatted report.
 """
@@ -9,8 +10,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.utils import ensure_data_dir
 from src.verify import evaluate
-
-
 
 def main() -> None:
     ensure_data_dir()
