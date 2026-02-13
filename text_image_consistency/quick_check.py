@@ -7,6 +7,7 @@ from pathlib import Path
 model_id = "IDEA-Research/grounding-dino-tiny"
 cache_dir = Path.home() / ".cache" / "huggingface" / "hub"
 
+
 print("Checking cache for:", model_id)
 print("Cache location:", cache_dir)
 
