@@ -4,7 +4,6 @@ import os
 import tempfile
 from src.verify import evaluate
 
-
 from src.verify import evaluate
 
 app = Flask(__name__)
