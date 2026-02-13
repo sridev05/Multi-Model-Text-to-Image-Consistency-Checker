@@ -1,3 +1,4 @@
+
 """
 BLIP image captioning. Singleton model loading.
 Model: Salesforce/blip-image-captioning-base
@@ -12,6 +13,7 @@ from transformers import BlipForConditionalGeneration, BlipProcessor
 from .utils import get_device, load_image
 
 logger = logging.getLogger("t2i")
+
 
 _model: Optional[BlipForConditionalGeneration] = None
 _processor: Optional[BlipProcessor] = None
