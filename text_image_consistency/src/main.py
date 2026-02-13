@@ -22,6 +22,7 @@ def main() -> None:
     prompt = "A gray image with no distinct objects."
     result = evaluate(image_path, prompt)
     # Formatted report
+ 
     print("=" * 60)
     print("TEXT-IMAGE CONSISTENCY EVALUATION REPORT")
     print("=" * 60)
