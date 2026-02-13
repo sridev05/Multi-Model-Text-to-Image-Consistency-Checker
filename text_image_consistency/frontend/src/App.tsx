@@ -1,5 +1,7 @@
 import React, { useState, useRef } from "react";
 
+
+
 type EvaluationResult = {
   blip_caption: string;
   clip_score: number;
