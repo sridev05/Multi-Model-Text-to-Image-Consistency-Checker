@@ -1,3 +1,4 @@
+
 """
 CLIP text-image similarity (normalized cosine).
 Model: openai/clip-vit-base-patch32
@@ -10,6 +11,7 @@ from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
 
 from .utils import get_device, load_image
+
 
 logger = logging.getLogger("t2i")
 
