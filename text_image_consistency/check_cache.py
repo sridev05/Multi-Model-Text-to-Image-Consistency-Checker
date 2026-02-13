@@ -19,6 +19,7 @@ def check_model_cache():
     print("=" * 60)
     print(f"Model: {model_id}\n")
     
+    
     found_files = []
     for cache_dir in cache_dirs:
         if cache_dir.exists():
