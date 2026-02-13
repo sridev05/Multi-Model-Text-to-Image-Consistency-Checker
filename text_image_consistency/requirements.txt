@@ -1,0 +1,30 @@
+# Text-Image Consistency Evaluation System
+# Python 3.10 / 3.11, CPU-only
+
+# Core
+torch>=2.0.0,<2.5.0
+torchvision>=0.15.0,<0.20.0
+
+# HuggingFace (CLIP, BLIP, Grounding DINO, TIFA decomposition)
+transformers>=4.36.0,<4.46.0
+accelerate>=0.25.0
+sentencepiece>=0.1.99
+
+# Vision & image
+Pillow>=9.5.0
+
+# PaddleOCR (CPU: install paddlepaddle CPU build for your OS)
+paddlepaddle>=2.5.0
+paddleocr>=2.7.0
+
+# NLP for TIFA / grounding helpers
+nltk>=3.8.0
+
+# Reproducibility
+numpy>=1.24.0,<2.0.0
+
+# Optional: safetensors for faster loading
+safetensors>=0.4.0
+
+# Web UI
+flask>=3.0.0
