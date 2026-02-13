@@ -33,6 +33,3 @@ Multi-Model Text-to-Image Consistency Checker is a comprehensive evaluation plat
 - **Developers**: Integrate consistency checking into AI-powered applications
 - **Quality Assurance**: Automated evaluation of large-scale image generation workflows
 
-## Tags
-
-`text-to-image` `computer-vision` `ai-evaluation` `clip` `blip` `grounding-dino` `consistency-measurement` `prompt-engineering` `multimodal-ai` `research-tools`
