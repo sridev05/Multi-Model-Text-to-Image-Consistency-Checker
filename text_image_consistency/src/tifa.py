@@ -1,3 +1,4 @@
+
 """
 TIFA: Text-Image Faithfulness. Decompose prompt into atomic facts;
 verify facts against image + caption; produce faithfulness score.
