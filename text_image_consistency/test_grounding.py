@@ -19,6 +19,8 @@ try:
     
     model_id = "IDEA-Research/grounding-dino-tiny"
     
+
+
     print(f"[1/2] Loading processor from {model_id}...")
     start = time.time()
     processor = AutoProcessor.from_pretrained(model_id)
