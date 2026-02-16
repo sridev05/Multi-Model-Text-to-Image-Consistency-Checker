@@ -45,7 +45,7 @@ def final_score_normalized(fused: float) -> float:
 
 def verdict(score_0_100: float) -> str:
     """Return MATCH | PARTIAL MATCH | MISMATCH from final score in [0, 100]."""
-    if score_0_100 >= 80:
+    if score_0_100 >= 70:
         return "MATCH"
     if score_0_100 >= 50:
         return "PARTIAL MATCH"
