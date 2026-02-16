@@ -106,13 +106,21 @@ def grounding_score(image_path: str, text: str) -> float:
         logger.warning("Grounding DINO: input_ids not found; returning 0.0 grounding score.")
         return 0.0
 
-    results = processor.post_process_grounded_object_detection(
-        outputs,
-        input_ids=input_ids,
-        box_threshold=0.3,
-        text_threshold=0.25,
-        target_sizes=target_sizes,
-    )
+    try:
+        # Try new API first (transformers >= 4.40)
+        results = processor.post_process_grounded_object_detection(
+            outputs,
+            input_ids=input_ids,
+            box_threshold=0.3,
+            text_threshold=0.25,
+            target_sizes=target_sizes,
+        )
+    except TypeError:
+        # Fallback to API without threshold parameters
+        results = processor.post_process_grounded_object_detection(
+            outputs,
+            target_sizes=target_sizes,
+        )
 
     result = results[0]
     boxes = result["boxes"]
