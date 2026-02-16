@@ -19,11 +19,7 @@ def main() -> None:
         "images",
         "sample.jpg",
     )
-<<<<<<< HEAD
-    prompt = "a lion face in black and white"
-=======
     prompt = "A black and white photo of a man in a suit and tie."
->>>>>>> 1b92a58ea683c507607acf61e0f1d27bbc32e1ef
     result = evaluate(image_path, prompt)
     # Formatted report
  
