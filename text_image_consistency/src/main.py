@@ -21,7 +21,7 @@ def main() -> None:
     )
 
     prompt = "grey and black lion in a black background"
-
+    result = evaluate(image_path, prompt)
     # Formatted report
  
     print("=" * 60)
