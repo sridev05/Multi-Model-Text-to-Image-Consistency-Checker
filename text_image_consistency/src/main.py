@@ -19,7 +19,7 @@ def main() -> None:
         "images",
         "sample.jpg",
     )
-    prompt = "A black and white photo of a man in a suit and tie."
+    prompt = "a black and white lion head on a black background"
     result = evaluate(image_path, prompt)
     # Formatted report
  

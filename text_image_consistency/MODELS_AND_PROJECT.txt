@@ -1,0 +1,193 @@
+================================================================================
+TEXT-IMAGE CONSISTENCY EVALUATION SYSTEM
+Models, Outputs, and Project Explanation
+================================================================================
+
+1. PROJECT OVERVIEW
+--------------------------------------------------------------------------------
+This system evaluates how well a generated image matches a text prompt. It is
+research-grade, CPU-only, and deterministic. The pipeline assumes the image
+was already generated (e.g., by Stable Diffusion, DALL·E, or Gemini) and
+scores alignment in two directions:
+
+  (A) FORWARD:  Text → Image  (does the image reflect what the prompt says?)
+  (B) BACKWARD: Image → Text  (does a description of the image match the prompt?)
+
+These are combined into a single final score in [0, 100] and a verdict:
+  MATCH         (80–100)
+  PARTIAL MATCH (50–79)
+  MISMATCH      (0–49)
+
+Inputs required:
+  - Image path (or uploaded file): the generated image
+  - Prompt (string): the text description used to generate the image
+
+Output: A dictionary (or JSON from the API) containing all component scores,
+        the fused forward/backward scores, final_score (0–100), and verdict.
+
+
+2. ARCHITECTURE (HIGH LEVEL)
+--------------------------------------------------------------------------------
+Step 1: BLIP generates one dense caption for the image (used in forward and backward).
+Step 2: FORWARD evaluation uses: CLIP, Grounding DINO, TIFA, PaddleOCR.
+Step 3: BACKWARD evaluation uses: CLIP(image, BLIP caption).
+Step 4: Fusion combines forward and backward into final_score and verdict.
+
+
+3. MODEL-BY-MODEL EXPLANATION
+--------------------------------------------------------------------------------
+
+3.1 CLIP (openai/clip-vit-base-patch32)
+----------------------------------------
+  Role:     Semantic alignment between text and image in a shared embedding space.
+  Input:    Image path, text string (prompt or caption).
+  Process:  Image and text are encoded by CLIP’s vision and text encoders;
+            cosine similarity between the two embeddings is computed and
+            mapped from [-1, 1] to [0, 1].
+  Output:   clip_similarity(image_path, text) → float in [0, 1].
+  Used as:  (1) Forward: prompt ↔ image. (2) Backward: BLIP caption ↔ image.
+
+
+3.2 BLIP (Salesforce/blip-image-captioning-base)
+------------------------------------------------
+  Role:     Dense image captioning to describe the image in one sentence.
+  Input:    Image path only (no text prompt for captioning).
+  Process:  Image is fed to BLIP; the model generates a caption autoregressively
+            (e.g., max_length=50, num_beams=3).
+  Output:   generate_caption(image_path) → string (one caption).
+  Used as:  (1) Semantic grounding signal for TIFA. (2) Reverse “prompt” for
+            backward CLIP similarity (image ↔ BLIP caption).
+
+
+3.3 Grounding DINO (IDEA-Research/grounding-dino-tiny)
+--------------------------------------------------------
+  Role:     Object-level grounding: detect entities mentioned in the prompt
+            and check if they appear in the image.
+  Input:    Image path, prompt text.
+  Process:  Entities are extracted from the prompt (phrases split by commas,
+            “and”, etc.). The prompt is formatted as period-separated phrases.
+            Grounding DINO runs zero-shot detection for these phrases and
+            returns bounding boxes with labels and confidence scores.
+  Output:   grounding_score(image_path, text) → float in [0, 1]: fraction of
+            extracted entities that have at least one detection above a
+            confidence threshold (e.g., 0.3).
+
+
+3.4 TIFA (Text-Image Faithfulness)
+-----------------------------------
+  Role:     Decompose the prompt into atomic facts and verify how many are
+            supported by the image (via the BLIP caption).
+  Input:    Image path, prompt text, BLIP caption.
+  Process:  Prompt is split into atomic facts (e.g., by conjunctions, commas).
+            Each fact is checked against the BLIP caption (e.g., keyword overlap
+            or a small LM like FLAN-T5 for “does caption support this fact?”).
+  Output:   tifa_score(image_path, text, caption) → float in [0, 1]: fraction
+            of facts that are supported by the caption (and thus by the image
+            description).
+
+
+3.5 PaddleOCR
+--------------
+  Role:     Extract any visible text from the image and compare with text
+            mentioned in the prompt (e.g., quoted strings or “says X”).
+  Input:    Image path, prompt text.
+  Process:  PaddleOCR runs detection and recognition on the image. The prompt
+            is scanned for quoted strings or cues like “says”, “reads”,
+            “written”. If the prompt does not require specific text, the score
+            is neutral (1.0). Otherwise, consistency is measured by overlap
+            between OCR text and expected text.
+  Output:   ocr_score(image_path, text) → float in [0, 1]. Often 1.0 when no
+            specific text is required; lower if expected text is missing or
+            contradicts OCR.
+
+
+4. FORWARD SCORE
+--------------------------------------------------------------------------------
+The forward score is a weighted average of the four forward components:
+
+  forward_score = W_CLIP * clip_score
+                + W_GROUNDING * grounding_score
+                + W_TIFA * tifa_score
+                + W_OCR * ocr_score
+
+Default weights (in fusion.py):
+  W_CLIP       = 0.30
+  W_GROUNDING  = 0.25
+  W_TIFA       = 0.25
+  W_OCR        = 0.20
+
+All component scores are in [0, 1], so forward_score is in [0, 1].
+
+
+5. BACKWARD SCORE
+--------------------------------------------------------------------------------
+  backward_score = clip_similarity(image_path, blip_caption)
+
+So it is the CLIP similarity between the generated image and the BLIP-generated
+caption. It is already in [0, 1].
+
+
+6. BIDIRECTIONAL FUSION AND FINAL OUTPUT
+--------------------------------------------------------------------------------
+  fused = W_FORWARD * forward_score + W_BACKWARD * backward_score
+
+Default: W_FORWARD = 0.6, W_BACKWARD = 0.4.
+
+  final_score = fused * 100   (clamped to [0, 100])
+
+Verdict (from fusion.py):
+  - final_score >= 80  →  MATCH
+  - final_score >= 50  →  PARTIAL MATCH
+  - else               →  MISMATCH
+
+(Note: Some versions use 70 for MATCH; the above matches the common 80/50 rule.)
+
+
+7. EVALUATION OUTPUT (FULL DICT)
+--------------------------------------------------------------------------------
+The evaluate(image_path, prompt) function (and the API) return:
+
+  blip_caption    (str)   : Dense caption from BLIP.
+  clip_score      (float) : Forward CLIP(prompt, image), [0, 1].
+  grounding_score (float) : Entity presence from Grounding DINO, [0, 1].
+  tifa_score      (float) : Fact faithfulness from TIFA, [0, 1].
+  ocr_score       (float) : OCR vs prompt consistency, [0, 1].
+  forward_score   (float) : Weighted forward score, [0, 1].
+  backward_score  (float) : CLIP(image, BLIP caption), [0, 1].
+  final_score     (float) : Fused score, 0–100.
+  verdict         (str)   : "MATCH" | "PARTIAL MATCH" | "MISMATCH".
+
+
+8. FILE ROLES IN THE PROJECT
+--------------------------------------------------------------------------------
+  src/main.py     : CLI entry; hardcoded image + prompt, prints report.
+  src/verify.py   : Orchestrator; calls caption, similarity, grounding, ocr,
+                    tifa, fusion; returns the full evaluation dict.
+  src/caption.py  : BLIP caption generation.
+  src/similarity.py : CLIP text–image similarity.
+  src/grounding.py  : Grounding DINO entity detection and score.
+  src/ocr.py      : PaddleOCR text extraction and consistency score.
+  src/tifa.py     : TIFA fact decomposition and faithfulness score.
+  src/fusion.py   : Forward/backward fusion, final score, verdict.
+  src/utils.py    : Device (CPU), seeding, image loading, data dir.
+  src/api.py      : Flask API: POST /api/evaluate with image + prompt.
+
+  frontend/       : React (Vite + TypeScript) UI: upload image, enter prompt,
+                    display all scores and verdict.
+
+
+9. HOW TO RUN
+--------------------------------------------------------------------------------
+  Backend (from project root):
+    pip install -r requirements.txt
+    python -m src.api
+
+  Frontend:
+    cd frontend && npm install && npm run dev
+
+  Then open the dev server URL (e.g. http://localhost:5173), upload an image,
+  enter the prompt, and click Evaluate. The UI shows the full result and verdict.
+
+================================================================================
+End of document.
+================================================================================
