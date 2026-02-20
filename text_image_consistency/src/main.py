@@ -17,9 +17,13 @@ def main() -> None:
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "data",
         "images",
-        "sample.jpg",
+        "pic.jpeg",
     )
+<<<<<<< HEAD
     prompt = "a black and white lion head on a black background"
+=======
+    prompt = "grey and black lion in a black background"
+>>>>>>> ff7765367f82b1687b02361dc086da0b39a515c2
     result = evaluate(image_path, prompt)
     # Formatted report
  
